@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2018",
+    "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Node",
     "lib": [
@@ -15,6 +15,7 @@
     "noEmit": true,
     "experimentalDecorators": true,
     "baseUrl": ".",
+    "resolveJsonModule": true,
     "paths": {
       "~/*": [
         "./*"
@@ -25,7 +26,8 @@
     },
     "types": [
       "@types/node",
-      "@nuxt/types"
+      "@nuxt/types",
+      "@nuxtjs/vuetify"
     ]
   },
   "exclude": [

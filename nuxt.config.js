@@ -37,7 +37,11 @@ export default {
    ** Plugins to load before mounting the App
    ** https://nuxtjs.org/guide/plugins
    */
-  plugins: [],
+  plugins: [
+    '~/plugins/paymentsApi',
+    '~/plugins/cardsApi',
+    '~/plugins/marketplaceApi'
+  ],
   /*
    ** Auto import components
    ** See https://nuxtjs.org/api/configuration-components
@@ -76,5 +80,21 @@ export default {
    ** Build configuration
    ** See https://nuxtjs.org/api/configuration-build/
    */
-  build: {},
+  build: {
+    extend(config, { isClient, isDev }) {
+      // Extend only webpack config for client-bundle
+      if (isDev && isClient) {
+        config.devtool = 'source-map'
+      }
+      if (!config.optimization.splitChunks.cacheGroups) {
+        config.optimization.splitChunks.cacheGroups = {
+          vendor: {
+            test: /[\\/]node_modules\/openpgp[\\/]/,
+            name: 'openpgp',
+            chunks: 'all',
+          },
+        }
+      }
+    },
+  },
 }
