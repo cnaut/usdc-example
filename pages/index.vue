@@ -2,18 +2,7 @@
   <v-layout>
     <v-row>
       <v-col cols="12" md="5">
-        <v-card :loading="loading" outlined>
-          <v-btn
-            v-if="!showPaymentStatus"
-            depressed
-            small
-            class="float-right mr-4 mt-4"
-            color="primary"
-            :disabled="loading"
-            @click.prevent="createCardOverlay = !createCardOverlay"
-          >
-            Add card
-          </v-btn>
+        <v-card :loading="loading" class="mx-auto" outlined> 
           <v-list-item three-line>
             <v-list-item-content>
               <Environment />
@@ -21,100 +10,7 @@
                 Pay with card
               </v-list-item-title>
             </v-list-item-content>
-          </v-list-item>
-          <v-card-text>
-            <v-form v-if="!showPaymentStatus" v-model="validForm">
-              <MarketplaceInfoFields
-                v-if="isMarketplace"
-                v-model="marketplaceInfo"
-                @show-error="showMarketplaceInfoError"
-              />
-
-              <AmountInput
-                v-model="formData.amount"
-                label="Amount"
-                :disabled="loading"
-              />
-
-              <v-select
-                v-model="formData.fiatAccountId"
-                :rules="[rules.required]"
-                :items="cardItems"
-                label="Select card"
-                :disabled="loading"
-                required
-              />
-
-              <CVVInput v-model="formData.cvv" :rules="[rules.required]" />
-
-              <v-text-field
-                v-model="formData.phoneNumber"
-                hint="Phone number of the user in E.164 format"
-                label="Phone"
-                :disabled="loading"
-              />
-
-              <v-text-field
-                v-model="formData.email"
-                :rules="[rules.required]"
-                label="Email"
-                :disabled="loading"
-              />
-
-              <v-btn
-                depressed
-                block
-                class="mt-7"
-                color="primary"
-                :disabled="!validForm || loading"
-                @click.prevent="makeChargeCall()"
-              >
-                Make payment
-              </v-btn>
-            </v-form>
-            <PaymentStatus
-              v-if="showPaymentStatus"
-              :payment-id="payment && payment.id"
-              @makeNewPayment="onNewPayment"
-              @error="onPollingError"
-            />
-          </v-card-text>
-        </v-card>
-        <v-overlay :dark="false" :value="createCardOverlay" :opacity="0.46">
-          <v-card
-            :loading="createCardLoading"
-            class="mx-auto pa-4 scrollable"
-            width="500"
-          >
-            <v-btn icon class="float-right" @click="createCardOverlay = false">
-              <v-icon>
-                mdi-close
-              </v-icon>
-            </v-btn>
-            <h2 class="title">
-              Add card
-            </h2>
-            <v-form>
-              <v-text-field
-                v-model="cardIdInput"
-                placeholder="25f4281e-0a14-4627-907d-3223672a94c2"
-                label="Card Id"
-              />
-              <v-btn
-                depressed
-                color="primary"
-                :disabled="!cardIdInput || createCardLoading"
-                @click.prevent="addCardById()"
-              >
-                Find card
-              </v-btn>
-            </v-form>
-
-            <p class="separator subtitle-2">
-              OR
-            </p>
-
-            <v-menu>
+            <v-menu v-if="!showPaymentStatus">
               <template v-slot:activator="{ on }">
                 <v-btn
                   v-if="isSandbox"
@@ -137,30 +33,145 @@
                 </v-list-item>
               </v-list>
             </v-menu>
-            <CreateCardForm
-              :prefill-data="prefillFormData"
-              @success="onCreateCardSuccess"
-              @loading="onCreateCardLoading"
+          </v-list-item>
+          <v-card-text>
+            <v-form v-if="!showPaymentStatus" ref="form" v-model="validForm">
+              <MarketplaceInfoFields
+                v-if="isMarketplace"
+                v-model="marketplaceInfo"
+                @show-error="showMarketplaceInfoError"
+              />
+
+              <AmountInput
+                v-model="formData.amount"
+                label="Amount"
+                :disabled="loading"
+              />
+
+              <CardInput
+                v-model="formData.cardData.cardNumber"
+                label="Card Number"
+                :disabled="loading"
+              />
+
+              <v-row>
+                <v-col cols="12" md="6">
+                  <CVVInput
+                    v-model="formData.cardData.cvv"
+                    :rules="[rules.isNumber]"
+                    default-label="CVV"
+                    :disabled="loading"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <ExpiryInput
+                    v-model="formData.cardData.expiry"
+                    :labels="expiryLabels"
+                    :required="true"
+                  />
+                </v-col>
+              </v-row>
+              <div class="my-4 subtitle-1 black--text">
+                Billing Details
+              </div>
+
+              <v-text-field
+                v-model="formData.cardData.name"
+                :rules="[rules.required]"
+                hint="Full name of the card holder"
+                label="Cardholder name"
+                :disabled="loading"
+              />
+
+              <v-text-field
+                v-model="formData.cardData.line1"
+                :rules="[rules.required]"
+                label="Address Line 1"
+                :disabled="loading"
+              />
+
+              <v-text-field
+                v-model="formData.cardData.line2"
+                label="Address Line 2"
+              />
+
+              <v-text-field
+                v-model="formData.cardData.postalCode"
+                :rules="[rules.required]"
+                label="Postalcode"
+                :disabled="loading"
+              />
+
+              <v-text-field
+                v-model="formData.cardData.city"
+                :rules="[rules.required]"
+                label="City"
+                :disabled="loading"
+              />
+
+              <v-text-field
+                v-model="formData.cardData.district"
+                :rules="[rules.required]"
+                label="District"
+                :disabled="loading"
+                hint="State / County / Province / Region portion of the address. US and Canada use the two-letter code for the subdivision"
+              />
+
+              <CountrySelect
+                v-model="formData.cardData.country"
+                :rules="[rules.required]"
+                label="Country Code"
+                :disabled="loading"
+              />
+
+              <v-text-field
+                v-model="formData.cardData.phoneNumber"
+                hint="Phone number of the user in E.164 format"
+                label="Phone"
+                :disabled="loading"
+              />
+
+              <v-text-field
+                v-model="formData.cardData.email"
+                :rules="[rules.required]"
+                label="Email"
+                :disabled="loading"
+              />
+
+              <v-btn
+                class="mt-4"
+                depressed
+                block
+                color="primary"
+                :disabled="!validForm || loading"
+                @click.prevent="chargeCard()"
+              >
+                Make payment
+              </v-btn>
+            </v-form>
+            <PaymentStatus
+              v-if="showPaymentStatus"
+              :payment-id="payment && payment.id"
+              @makeNewPayment="onNewPayment"
+              @error="onPollingError"
             />
-          </v-card>
-        </v-overlay>
-        <ErrorSheet
-          :error="error"
-          :show-error="showError"
-          @onChange="onErrorSheetClosed"
-        />
+          </v-card-text>
+        </v-card>
       </v-col>
       <v-col cols="12" md="5">
         <div class="pa-4">
-          <h1 class="headline">Use existing card</h1>
+          <h1 class="headline">Charge a card - One-off payment</h1>
+
           <p class="mt-6">
-            To accept online payments from the end user you can reuse already
-            entered card details.
+            To accept a card payment using the Circle Payments API you need to
+            collect card details and billing information from the end user
+            similar to the payments form shown on the left.
           </p>
           <p>
-            Creating a card will respond with an id value that can be stored on
-            your side to refer to this end -user's card in future payment
-            requests.
+            If you are accepting a one-off payment (that is, your product does
+            not need to support accepting multiple future payments for this
+            card), then you don't need so store the card id as a reference to
+            this end -user's card when creating the card.
           </p>
           <p>
             For implementation details please see our
@@ -172,64 +183,143 @@
               API guide.
             </a>
           </p>
-
           <p class="subtitle-2">
             You can test the form by entering your personal api key in the
             settings on the right (Caution: When using a production api key it
             will charge your card).
-            <br /><br />
-            For demo purposes card ids are saved in local storage.
           </p>
         </div>
       </v-col>
     </v-row>
+    <ErrorSheet
+      :error="error"
+      :show-error="showError"
+      @onChange="onErrorSheetClosed"
+    />
   </v-layout>
 </template>
 
 <script lang="ts">
-import { Component, Vue, Watch } from 'nuxt-property-decorator'
+import { Component, Vue } from 'nuxt-property-decorator'
 import { mapGetters } from 'vuex'
 import { v4 as uuidv4 } from 'uuid'
-import { exampleCards } from '@/lib/cardTestData'
 import openPGP from '@/lib/openpgp'
+import { getLive } from '@/lib/apiTarget'
+import { exampleCards } from '@/lib/cardTestData'
+import { CreateCardPayload } from '@/lib/cardsApi'
 import { CreatePaymentPayload } from '@/lib/paymentsApi'
 import {
   CreateMarketplacePaymentPayload,
   MarketplaceInfo,
 } from '@/lib/marketplaceApi'
+import CardInput from '@/components/CardInput.vue'
+import CVVInput from '@/components/CVVInput.vue'
 import ErrorSheet from '@/components/ErrorSheet.vue'
 import Environment from '@/components/Environment.vue'
-import CreateCardForm from '@/components/CreateCardForm.vue'
+import ExpiryInput from '@/components/ExpiryInput.vue'
 import AmountInput from '@/components/AmountInput.vue'
-import CVVInput from '@/components/CVVInput.vue'
+import CountrySelect from '@/components/CountrySelect.vue'
 import PaymentStatus from '@/components/PaymentStatus.vue'
 import MarketplaceInfoFields from '@/components/MarketplaceInfoFields.vue'
-import { getLive } from '@/lib/apiTarget'
 
-interface Card {
+interface FormData {
+  amount: string
+  cardData: {
+    cardNumber: string
+    cvv: string
+    expiry: {
+      month: string
+      year: string
+    }
+    name: string
+    country: string
+    district: string
+    line1: string
+    line2: string
+    city: string
+    postalCode: string
+    phoneNumber: string
+    email: string
+  }
+}
+
+interface CreateChargePayload {
   id: string
-  value: string
-  text: string
+  amount: {
+    amount: number
+    currency: string
+  }
+  verification: string
+  source: {
+    id: string
+    type: string
+  }
+  keyId: string
+  encryptedData: string
 }
 
 @Component({
   components: {
+    AmountInput,
     ErrorSheet,
     Environment,
-    CreateCardForm,
-    AmountInput,
+    CardInput,
+    ExpiryInput,
+    CountrySelect,
     CVVInput,
     PaymentStatus,
     MarketplaceInfoFields,
   },
   computed: {
     ...mapGetters({
-      cards: 'getCards',
+      payload: 'getRequestPayload',
+      response: 'getRequestResponse',
+      requestUrl: 'getRequestUrl',
       isMarketplace: 'isMarketplace',
     }),
   },
 })
-export default class CardFlowClass extends Vue {
+export default class ChargeFlowClass extends Vue {
+  validForm: boolean = false
+  formData: FormData = {
+    amount: '0.00',
+    cardData: {
+      cardNumber: '',
+      cvv: '',
+      expiry: {
+        month: '',
+        year: '',
+      },
+      name: '',
+      country: '',
+      district: '',
+      line1: '',
+      line2: '',
+      city: '',
+      postalCode: '',
+      phoneNumber: '',
+      email: '',
+    },
+  }
+
+  rules = {
+    isNumber: (v: string) =>
+      v === '' || !isNaN(parseInt(v)) || 'Please enter valid number',
+    required: (v: string) => !!v || 'Field is required',
+  }
+
+  error: object = {}
+  loading: boolean = false
+  showError: boolean = false
+  showPaymentStatus: boolean = false
+  expiryLabels = {
+    month: 'Expiry Month',
+    year: 'Expiry Year',
+  }
+
+  payment = null
+  prefillItems = exampleCards
+  isSandbox: Boolean = !getLive()
   isMarketplace!: boolean
   marketplaceInfo: MarketplaceInfo = {
     walletId: '',
@@ -237,48 +327,14 @@ export default class CardFlowClass extends Vue {
     merchantWalletId: '',
   }
 
-  cards!: Card[]
-  cardItems: string[] = []
-  validForm: boolean = false
-  isSandbox: Boolean = !getLive()
-  prefillItems = exampleCards
-  prefillFormData = {}
-  formData = {
-    fiatAccountId: '',
-    amount: '0.00',
-    cvv: '',
-    phoneNumber: '',
-    email: '',
-  }
+  prefillForm(index: number) {
+    const cardData = exampleCards[index].formData
+    this.formData.cardData = cardData
 
-  cardIdInput = ''
-  rules = {
-    required: (v: string) => !!v || 'Field is required',
-  }
-
-  required = [(v: string) => !!v || 'Field is required']
-  loading: boolean = false
-  error: object = {}
-  showError: boolean = false
-  showPaymentStatus: boolean = false
-  createCardOverlay = false
-  polling: boolean = false
-  pollingId: number = 0
-  createCardLoading: boolean = false
-  payment = null
-
-  @Watch('cards', { immediate: true })
-  onCardsChange() {
-    const items = this.cards.map((card) => {
-      return card.id
+    this.$nextTick(() => {
+      const vuetifyForm: any = this.$refs.form
+      vuetifyForm.validate()
     })
-
-    this.cardItems = items
-  }
-
-  onPollingError(error: any) {
-    this.error = error
-    this.showError = true
   }
 
   onErrorSheetClosed() {
@@ -286,27 +342,13 @@ export default class CardFlowClass extends Vue {
     this.showError = false
   }
 
+  onPollingError(error: any) {
+    this.error = error
+    this.showError = true
+  }
+
   onNewPayment() {
     this.showPaymentStatus = false
-  }
-
-  onCreateCardLoading(value: boolean) {
-    this.createCardLoading = value
-  }
-
-  onCreateCardSuccess() {
-    this.createCardOverlay = false
-  }
-
-  addCardById() {
-    this.$store.dispatch('setCard', {
-      id: this.cardIdInput,
-    })
-    this.createCardOverlay = false
-  }
-
-  prefillForm(index: number) {
-    this.prefillFormData = exampleCards[index].formData
   }
 
   showMarketplaceInfoError(error: object) {
@@ -314,7 +356,69 @@ export default class CardFlowClass extends Vue {
     this.showError = true
   }
 
-  async makeChargeCall() {
+  async chargeCard() {
+    try {
+      const card = await this.makeCreateCardCall()
+      if (card && card.id) {
+        await this.makeChargeCall(card.id)
+      }
+    } catch (error) {
+      this.error = error
+      this.showError = true
+    } finally {
+      this.loading = false
+    }
+  }
+
+  async makeCreateCardCall() {
+    this.loading = true
+
+    const payload: CreateCardPayload = {
+      idempotencyKey: uuidv4(),
+      expMonth: parseInt(this.formData.cardData.expiry.month),
+      expYear: 2000 + parseInt(this.formData.cardData.expiry.year),
+      keyId: '',
+      encryptedData: '',
+      billingDetails: {
+        line1: this.formData.cardData.line1,
+        line2: this.formData.cardData.line2,
+        city: this.formData.cardData.city,
+        district: this.formData.cardData.district,
+        postalCode: this.formData.cardData.postalCode,
+        country: this.formData.cardData.country,
+        name: this.formData.cardData.name,
+      },
+      metadata: {
+        phoneNumber: this.formData.cardData.phoneNumber,
+        email: this.formData.cardData.email,
+        sessionId: 'xxx',
+        ipAddress: '172.33.222.1',
+      },
+    }
+
+    try {
+      const publicKey = await this.$cardsApi.getPCIPublicKey()
+      const cardDetails = {
+        number: this.formData.cardData.cardNumber.replace(/\s/g, ''),
+        cvv: this.formData.cardData.cvv,
+      }
+
+      const encryptedData = await openPGP.encrypt(cardDetails, publicKey)
+      const { encryptedMessage, keyId } = encryptedData
+
+      payload.keyId = keyId
+      payload.encryptedData = encryptedMessage
+
+      return await this.$cardsApi.createCard(payload)
+    } catch (error) {
+      this.error = error
+      this.showError = true
+    } finally {
+      this.loading = false
+    }
+  }
+
+  async makeChargeCall(cardId: string) {
     this.loading = true
 
     const amountDetail = {
@@ -322,7 +426,7 @@ export default class CardFlowClass extends Vue {
       currency: 'USD',
     }
     const sourceDetails = {
-      id: this.formData.fiatAccountId,
+      id: cardId,
       type: 'card',
     }
 
@@ -331,19 +435,16 @@ export default class CardFlowClass extends Vue {
       amount: amountDetail,
       verification: 'cvv',
       source: sourceDetails,
-      keyId: '',
-      encryptedData: '',
       metadata: {
-        phoneNumber: this.formData.phoneNumber,
-        email: this.formData.email,
+        phoneNumber: this.formData.cardData.phoneNumber,
+        email: this.formData.cardData.email,
         sessionId: 'xxx',
         ipAddress: '172.33.222.1',
       },
     }
 
     try {
-      const { cvv } = this.formData
-      const cardDetails = { cvv }
+      const cardDetails = { cvv: this.formData.cardData.cvv }
 
       const publicKey = await this.$paymentsApi.getPCIPublicKey()
       const encryptedData = await openPGP.encrypt(cardDetails, publicKey)
@@ -372,15 +473,3 @@ export default class CardFlowClass extends Vue {
   }
 }
 </script>
-
-<style scoped>
-.scrollable {
-  max-height: 90vh;
-  overflow-y: auto;
-}
-.separator {
-  margin: 50px 0;
-  text-align: center;
-  border-bottom: 1px solid black;
-}
-</style>

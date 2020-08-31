@@ -13,7 +13,7 @@ function getAPIHostname() {
 
 function getLive() {
   const hostname = getAPIHostname()
-  console.log(hostname)
+  console.log("GET LIVE", !(hostname.includes('sandbox') || hostname.includes('smokebox') || hostname.includes('localhost')))
   return !(hostname.includes('sandbox') || hostname.includes('smokebox') || hostname.includes('localhost'))
 }
 

@@ -17,6 +17,7 @@ interface PublicKey {
  * @return {Object} Object containing encryptedMessage and keyId
  */
 async function encrypt(dataToEncrypt: object, { keyId, publicKey }: PublicKey) {
+  console.log(publicKey)
   const decodedPublicKey = atob(publicKey)
   const openpgp = await openpgpModule
   const options = {

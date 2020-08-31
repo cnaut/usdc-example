@@ -54,6 +54,21 @@
           </v-list-item-action>
           <v-list-item-title>Switch drawer (click me)</v-list-item-title>
         </v-list-item>
+
+        <v-list-item>
+          <v-content class="pa-3 pt-8">
+            <p>
+              Settings
+            </p>
+            <v-form class="mt-8">
+              <v-text-field v-model="apiKey" label="Your API key" outlined />
+              <p class="subtitle-2 font-weight-light mb-8">
+                Do not share or record your API keys in publicly accessible mediums
+                such as GitHub, client-side code, etc.
+              </p>
+            </v-form>
+          </v-content>
+        </v-list-item>
       </v-list>
     </v-navigation-drawer>
     <v-footer :absolute="!fixed" app>
@@ -62,30 +77,38 @@
   </v-app>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      clipped: false,
-      drawer: false,
-      fixed: false,
-      items: [
-        {
-          icon: 'mdi-apps',
-          title: 'Welcome',
-          to: '/',
-        },
-        {
-          icon: 'mdi-chart-bubble',
-          title: 'Inspire',
-          to: '/inspire',
-        },
-      ],
-      miniVariant: false,
-      right: true,
-      rightDrawer: false,
-      title: 'Vuetify.js',
+
+<script lang="ts">
+import { Vue, Component } from 'nuxt-property-decorator'
+
+@Component
+export default class DefaultLayoutsClass extends Vue {
+  get apiKey() {
+    return this.$store.getters.getApiKey;
+  }
+
+  set apiKey(value: string) {
+    this.$store.commit('SET_BEARER_TOKEN', value);
+  }
+
+  clipped = false
+  drawer = false
+  fixed = false
+  items = [
+    {
+      icon: 'mdi-apps',
+      title: 'Welcome',
+      to: '/',
+    },
+    {
+      icon: 'mdi-chart-bubble',
+      title: 'Inspire',
+      to: '/inspire',
     }
-  },
+  ]
+  miniVariant = false
+  right = true
+  rightDrawer = false
+  title = 'Vuetify.js'
 }
 </script>
